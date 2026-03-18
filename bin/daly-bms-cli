@@ -27,6 +27,7 @@ parser.add_argument("--set-discharge-mosfet", help="'on' or 'off'", type=str)
 parser.add_argument("--set-soc", help="'0.0' to '100.0'", type=str)
 parser.add_argument("--restart", help="restart bms", action="store_true")
 parser.add_argument("--retry", help="retry X times if the request fails, default 5", type=int, default=5)
+parser.add_argument("--bms-id", help="BMS ID (1-16), default 1", type=int, default=1)
 parser.add_argument("--verbose", help="Verbose output", action="store_true")
 
 parser.add_argument("--mqtt", help="Write output to MQTT", action="store_true")
@@ -75,7 +76,7 @@ else:
 if args.sinowealth:
     bms = DalyBMSSinowealth(request_retries=args.retry, logger=logger)
 else:
-    bms = DalyBMS(request_retries=args.retry, address=address, logger=logger)
+    bms = DalyBMS(request_retries=args.retry, address=address, bms_id=args.bms_id, logger=logger)
 bms.connect(device=args.device)
 
 result = False

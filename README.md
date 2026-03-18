@@ -74,6 +74,7 @@ optional arguments:
                         'on' or 'off'
   --set-soc SET_SOC     0.0 to 100.0
   --retry RETRY         retry X times if the request fails, default 5
+  --bms-id BMS_ID       BMS ID (1-16), default 1
   --verbose             Verbose output
   --mqtt                Write output to MQTT
   --mqtt-hass           MQTT Home Assistant Mode

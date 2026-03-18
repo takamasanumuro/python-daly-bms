@@ -8,11 +8,12 @@ from .error_codes import ERROR_CODES
 
 
 class DalyBMS:
-    def __init__(self, request_retries=3, address=4, logger=None):
+    def __init__(self, request_retries=3, address=4, bms_id=1, logger=None):
         """
 
         :param request_retries: How often read requests should get repeated in case that they fail (Default: 3).
         :param address: Source address for commands sent to the BMS (4 for RS485, 8 for UART/Bluetooth)
+        :param bms_id: BMS ID (1-16) (Default: 1)
         :param logger: Python Logger object for output (Default: None)
         """
         self.status = None
@@ -22,6 +23,7 @@ class DalyBMS:
             self.logger = logging.getLogger(__name__)
         self.request_retries = request_retries
         self.address = address  # 4 = USB, 8 = Bluetooth
+        self.bms_id = bms_id
 
     def connect(self, device):
         """
@@ -62,8 +64,12 @@ class DalyBMS:
         :param command: Command ID ("90" - "98")
         :return: Request message as bytes
         """
+
+        #When the master requests data from BMS ID 1, the command should include BMS ID 0
+        bms_id_for_requesting = self.bms_id - 1
+
         # 95 -> a58095080000000000000000c2
-        message = "a5%i0%s08%s" % (self.address, command, extra)
+        message = "a5%i%i%s08%s" % (self.address, bms_id_for_requesting, command, extra)
         message = message.ljust(24, "0")
         message_bytes = bytearray.fromhex(message)
         message_bytes += self._calc_crc(message_bytes)
@@ -92,7 +98,7 @@ class DalyBMS:
             else:
                 break
         if not response_data:
-            self.logger.error('%s failed after %s tries' % (command, x + 1))
+            self.logger.error('Command %s failed after %s tries' % (command, x + 1))
             return False
         return response_data
 
@@ -123,6 +129,9 @@ class DalyBMS:
                 self.logger.debug("response crc mismatch: %s != %s" % (response_crc.hex(), b[-1:].hex()))
             header = b[0:4].hex()
             # todo: verify  more header fields
+            if header[2:4] != "%02x" % self.bms_id:
+                self.logger.debug("invalid header %s: wrong BMS ID (%s != %02x)" % (header, header[2:4], self.bms_id))
+                continue
             if header[4:6] != command:
                 self.logger.debug("invalid header %s: wrong command (%s != %s)" % (header, header[4:6], command))
                 continue
